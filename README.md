@@ -1,6 +1,6 @@
 # Swifter.jl
 
-  * iOS REPL with Swifter.jl + [Console](https://github.com/wookay/Console)
+  * iOS REPL with Swifter.jl + [AppConsole](https://github.com/wookay/AppConsole)
 
   [![Build Status](https://api.travis-ci.org/wookay/Swifter.jl.svg?branch=master)](https://travis-ci.org/wookay/Swifter.jl)
 
@@ -9,7 +9,7 @@
 ```swift
 class ViewController: UIViewController {
     override func viewDidLoad() {
-        Console(initial: self).run()
+        AppConsole(initial: self).run()
     }
 }
 ```
