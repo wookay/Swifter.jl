@@ -31,5 +31,4 @@ build_script:
       Pkg.clone(pwd(), \"Swifter\"); Pkg.build(\"Swifter\")"
 
 test_script:
-  - C:\projects\julia\bin\julia --check-bounds=yes -e "Pkg.add(\"HttpServer\")"
   - C:\projects\julia\bin\julia --check-bounds=yes -e "Pkg.test(\"Swifter\")"
