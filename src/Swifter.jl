@@ -9,7 +9,7 @@ include("query.jl")
 function request(app::App, verb::AbstractString, dict::Dict)
   resp = get("$(app.url)$(verb)"; query = dict)
   info = json(resp)
-  haskey(info, "failed") ? Symbol(info["failed"]) : info["result"]
+  haskey(info, "symbol") ? Symbol(info["symbol"]) : info["result"]
 end
 
 function request(app::App, verb::AbstractString, pair::Pair)

@@ -4,10 +4,14 @@ import JSON
 
 include("types.jl")
 
+chains(sym::Symbol) = Any["symbol"=>sym]
+chains(n::Int) = Any["int"=>n]
+chains(n::Float64) = Any["float"=>n]
+chains(str::AbstractString) = Any["string"=>str]
 function chains(expr::Expr)
   symbols = chaining(expr, 0, [])
   sym = symbols[1]
-  if isdefined(sym)
+  if isa(sym, Symbol) && isdefined(sym)
     symbols[1] = (:isdefined, sym)
   end
   symbols
@@ -41,9 +45,9 @@ function query_expr(expr::Expr)
     lhs,rhs = expr.args
     lsym = chains(lhs)
     rsym = chains(rhs)
-    Assign(lsym,rsym)
+    Setter(lsym, rsym)
   else
-    Property(chains(expr))
+    Getter(chains(expr))
   end
 end
 
@@ -53,26 +57,30 @@ function sym_to_mem(symmem, vec::Vector)
     if isa(item,Tuple)
       if :isdefined == first(item)
         if sym == string(last(item))
-          return mem.address
+          return "address"=>mem.address
         end
       elseif :call == first(item)
-        return string(last(item), "()")
+        return "call"=>last(item)
+      else
+        return item
       end
+    elseif isa(item,Pair)
+      return item
     else
-      return string(item)
+      return "symbol"=>item
     end
   end
 end
 
-function params(symmem, assign::Assign)
-  Dict("type"=>"Assign",
-       "lhs"=>JSON.json(sym_to_mem(symmem, assign.lhs)),
-       "rhs"=>JSON.json(sym_to_mem(symmem, assign.rhs)))
+function params(symmem, setter::Setter)
+  Dict("type"=>"Setter",
+       "lhs"=>JSON.json(sym_to_mem(symmem, setter.lhs)),
+       "rhs"=>JSON.json(sym_to_mem(symmem, setter.rhs)))
 end
 
-function params(symmem, property::Property)
-  Dict("type"=>"Property",
-       "lhs"=>JSON.json(sym_to_mem(symmem, property.lhs)))
+function params(symmem, getter::Getter)
+  Dict("type"=>"Getter",
+       "lhs"=>JSON.json(sym_to_mem(symmem, getter.lhs)))
 end
 
 function query_params(app::App, str::AbstractString)
@@ -98,7 +106,7 @@ macro query(expr::Expr)
   memory = nothing
   (sym,memory) = chain_convert(chain.lhs)
   if nothing == memory
-    if isa(chain, Assign)
+    if isa(chain, Setter)
       (sym,memory) = chain_convert(chain.rhs)
     end
   end
@@ -113,3 +121,7 @@ macro query(expr::Expr)
     end
   end
 end
+
+
+#vc = 5
+#@query vc.label.text = "hello"
