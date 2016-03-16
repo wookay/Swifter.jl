@@ -19,22 +19,47 @@ end
 
 function chaining(expr::Expr, depth::Int, symbols::Vector)
   if :call == expr.head
+    isargs = false
+    callargs = []
     for ex in expr.args
       if isa(ex, Expr)
-        vals = chaining(ex, depth + 1, symbols)
-        sym = isa(vals[end], QuoteNode) ? vals[end].value : vals[end]
-        vals[end] = (:call, sym)
+        if :(:) == ex.head
+          lastsym = symbols[end]
+          sym = first(lastsym)
+          store = last(lastsym)
+          if isa(store, Symbol)
+            store = Any[store, []]
+          end
+          args = last(store)
+          push!(args, ex.args)
+          symbols[end] = (sym, Any[first(store), args])
+        else
+          vals = chaining(ex, depth + 1, symbols)
+          sym = isa(vals[end], QuoteNode) ? vals[end].value : vals[end]
+          vals[end] = (:call, sym)
+        end
       else
-        push!(symbols, (:call, ex))
+        if isargs
+          push!(callargs, ex)
+        else
+          isargs = true
+          push!(symbols, (:call, ex))
+        end
       end
+    end
+    if !isempty(callargs)
+      sym = last(symbols[end])
+      symbols[end] = (:call, Any[sym, callargs])
     end
   else
     for ex in expr.args
-       if isa(ex, Expr)
-         chaining(ex, depth + 1, symbols)
-       else
-         push!(symbols, ex)
-       end
+      if isa(ex, Expr)
+        chaining(ex, depth + 1, symbols)
+      elseif isa(ex, QuoteNode)
+        push!(symbols, ex.value)
+      else
+        push!(symbols, ex)
+      end
     end
   end
   symbols
@@ -98,10 +123,7 @@ function chain_convert(vec::Vector)
   return (nothing, nothing)
 end
 
-macro query(sym::Symbol)
-  esc(sym)
-end
-macro query(expr::Expr)
+function query_chain(expr::Expr)
   chain = query_expr(expr)
   memory = nothing
   (sym,memory) = chain_convert(chain.lhs)
@@ -110,6 +132,15 @@ macro query(expr::Expr)
       (sym,memory) = chain_convert(chain.rhs)
     end
   end
+  (chain,sym,memory)
+end
+
+# @query
+macro query(sym::Symbol)
+  esc(sym)
+end
+macro query(expr::Expr)
+  (chain,sym,memory) = query_chain(expr)
   if nothing == memory
     quote
       $chain
@@ -122,6 +153,22 @@ macro query(expr::Expr)
   end
 end
 
-
-#vc = 5
-#@query vc.label.text = "hello"
+# query_request
+function query_request(sym::Symbol)
+  if isdefined(sym)
+    eval(parse("Main.$sym"))
+  else
+    sym
+  end
+end
+function query_request(expr::Expr)
+  (chain,sym,memory) = query_chain(expr)
+  if nothing == memory
+    chain
+  else
+    if isdefined(memory)
+      mem = eval(parse("Main.$memory"))
+      request(mem.app, "/query", params((sym,mem), chain))
+    end
+  end
+end
