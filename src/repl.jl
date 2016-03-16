@@ -1,9 +1,11 @@
 import Base: LineEdit, REPL
 
+export RunSwifterREPL
+
 # original code from
 # https://github.com/Keno/Cxx.jl/blob/master/src/CxxREPL/replpane.jl
 
-function AddSwifterMode(repl)
+function AddSwifterMode(key, repl)
     panel = LineEdit.Prompt("Swifter> ";
         prompt_prefix = "\e[0;3;5m",
         prompt_suffix = Base.text_colors[:white],
@@ -19,7 +21,6 @@ function AddSwifterMode(repl)
     hp.mode_mapping[:Swifter] = panel
     panel.hist = hp
 
-    key = '>'
     const keymap = Dict{Any,Any}(
         key => function (s,args...)
             if isempty(s) || position(LineEdit.buffer(s)) == 0
@@ -28,10 +29,12 @@ function AddSwifterMode(repl)
                     LineEdit.state(s, panel).input_buffer = buf
                 end
             else
-                LineEdit.edit_insert(s,key)
+                LineEdit.edit_insert(s, key)
             end
         end
     )
+    repl.interface = REPL.setup_interface(repl; extra_repl_keymap = keymap)
+
     search_prompt, skeymap = LineEdit.setup_search_keymap(hp)
     main_keymap = REPL.mode_keymap(main_mode)
 
@@ -42,6 +45,6 @@ function AddSwifterMode(repl)
     nothing
 end
 
-function RunSwifterREPL()
-    AddSwifterMode(Base.active_repl)
+function RunSwifterREPL(; key=">")
+    AddSwifterMode(key, Base.active_repl)
 end
