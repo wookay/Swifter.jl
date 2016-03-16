@@ -12,11 +12,11 @@ end
 
 abstract QueryChain
 
-type Assign <: QueryChain
+type Setter <: QueryChain
   lhs::Vector
   rhs::Vector
 end
 
-type Property <: QueryChain
+type Getter <: QueryChain
   lhs::Vector
 end

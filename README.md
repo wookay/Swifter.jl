@@ -17,10 +17,26 @@ class ViewController: UIViewController {
 
 # REPL client with Julia
 ```julia
-using Swifter
+julia> using Swifter
 
-simulator = App("http://localhost:8080")
-vc = initial(simulator)
+julia> vc = initial("http://localhost:8080")
+Swifter.Memory(Swifter.App("http://localhost:8080"),"0x7f9238f1e4b0")
 
-@query vc.view.backgroundColor = UIColor.greenColor()
+julia> @query vc.view.backgroundColor = UIColor.greenColor()
+"UIDeviceRGBColorSpace 0 1 0 1"
+```
+
+* Query mode : pressing the `>` key.
+```julia
+Swifter> vc.view.frame
+"{{0, 0}, {320, 568}}"
+
+Swifter> vc.label.text = "hello world"
+"hello world"
+
+Swifter> vc.label.backgroundColor = UIColor.yellowColor()
+"UIDeviceRGBColorSpace 1 1 0 1"
+
+Swifter> vc.label.font = UIFont(name: "Helvetica", size: 50)
+"<UICTFont: 0x7faa91461b40> font-family: \"Helvetica\"; font-weight: normal; font-style: normal; font-size: 50.00pt"
 ```
