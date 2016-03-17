@@ -1,6 +1,6 @@
-The Swifter.jl package is licensed under the MIT "Expat" License:
+The Swifter.jl package is licensed under the MIT Expat License:
 
-> Copyright (c) 2016: wookyoung.
+> Copyright (c) 2016: WooKyoung Noh.
 > 
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal
@@ -20,3 +20,6 @@ The Swifter.jl package is licensed under the MIT "Expat" License:
 > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 > SOFTWARE.
 > 
+
+Swifter.jl includes borrowed code from the following projects, which have their own licenses:
+- [Cxx.jl](https://github.com/Keno/Cxx.jl/blob/master/LICENSE.md) (for REPL) [MIT].

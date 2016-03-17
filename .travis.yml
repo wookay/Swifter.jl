@@ -1,15 +1,18 @@
-# Documentation: http://docs.travis-ci.com/user/languages/julia/
 language: julia
 os:
-  - linux
-  - osx
+- linux
+- osx
 julia:
-  - release
-  - nightly
+- release
+- nightly
+script:
+- if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+- julia -e 'Pkg.clone(pwd()); Pkg.build("Swifter")'
+- julia -e 'Pkg.test("Swifter"; coverage=true)'
+after_success:
+- julia --color=yes -e 'cd(Pkg.dir("Swifter")); Pkg.add("Coverage"); using Coverage;
+  Coveralls.submit(Coveralls.process_folder())'
 notifications:
   email: false
-# uncomment the following lines to override the default test script
-script:
-  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia -e 'Pkg.clone(pwd()); Pkg.build("Swifter")'
-  - julia -e 'Pkg.test("Swifter"; coverage=true)'
+  slack:
+    secure: pfWoLy9bTXfLzpfFmgleu5kwyhzjd4eelfE4W4JbMk6DvJNpiZPKIB9mJNrj7Qe5M8qjHNdUnraDsZCzwY5DfIekunnhCirZDqJwXhqC4AohLEaRkJEri29E0wwkv42M+8o2dYAILi59j6VLLej5p0ErPEwg5xnMHBbRqf6ULoSkIXk6F6AHKa3SUClwUUv/ymSVfLGBQHLbJxAWRdbVCtUf9imQBKltJggCOhfr1IGMF85m58ANp9RqfljAk4UT7azH+ydnP+Uy+kqI6m2iaMjC2/YC5AZUB/YA50dmpDes8zLunzDbnAF2sXkFdzqaXdv/5qlqyyDdYDk2EffL0F0NbmAcDaCHSJ3sygpbX2I2wBSE1zCq1b+E3Hq1BrzjsNCmh7FZFQLQk5/uQY3DX4doXGgLmDFY5lQzwvFcKJy604l8aa2JJMlNJqtKqfrAGLwRELlydvIsoY23e0b9YrNp1QgCEWcLd1jOG+fksDXVfZ3tN/sdqqeIs8lYhPXFa2YRprewkcCQgLxLLlYWggSCbnTxR6Urx00yJDJ/1P0JUJkgHAvc3n9MF7JI9m/x51Mf5r3t6vq4aNFhU3tv4jLEysLEAuFaBbuNBw4SHHk4EYnRHuHnF10lFhuomSaYB5Qix44W7qSdOwAwSyyZdfjemB6HhnwVXN3C2uFN6ZA=
