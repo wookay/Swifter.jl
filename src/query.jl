@@ -2,11 +2,14 @@
 
 import JSON
 
+export @query, params
+
 include("types.jl")
 
-chains(sym::Symbol) = Any["symbol"=>sym]
+chains(sym::Symbol) = Any[isdefined(sym) ? (:isdefined, sym) : "symbol"=>sym]
 chains(n::Int) = Any["int"=>n]
 chains(n::Float64) = Any["float"=>n]
+chains(n::Bool) = Any["bool"=>n]
 chains(str::AbstractString) = Any["string"=>str]
 function chains(expr::Expr)
     symbols = chaining(expr, 0, [])
@@ -65,7 +68,7 @@ function chaining(expr::Expr, depth::Int, symbols::Vector)
     symbols
 end
 
-function query_expr(expr::Expr)
+function querychainof(expr::Expr)
     if :(=) == expr.head
         lhs,rhs = expr.args
         lsym = chains(lhs)
@@ -81,8 +84,14 @@ function sym_to_mem(symmem, vec::Vector)
     map(vec) do item
         if isa(item,Tuple)
             if :isdefined == first(item)
-                if sym == string(last(item))
+                if sym == last(item)
                     return "address"=>mem.address
+                else
+                    var = last(item)
+                    val = eval(Main, quote
+                        $(var)
+                    end)
+                    return first(chains(val))
                 end
             elseif :call == first(item)
                 return "call"=>last(item)
@@ -108,10 +117,6 @@ function params(symmem, getter::Getter)
          "lhs"=>JSON.json(sym_to_mem(symmem, getter.lhs)))
 end
 
-function query_params(app::App, str::AbstractString)
-    params(nothing, query_expr(Expr(:block, parse(str))))
-end
-
 function chain_convert(vec::Vector)
     for unit in vec
         if isa(unit, Tuple)
@@ -120,11 +125,11 @@ function chain_convert(vec::Vector)
             end
         end
     end
-    return (nothing, nothing)
+    return (:notfound, nothing)
 end
 
-function query_chain(expr::Expr)
-    chain = query_expr(expr)
+function pointchainof(expr::Expr)
+    chain = querychainof(expr)
     memory = nothing
     (sym,memory) = chain_convert(chain.lhs)
     if nothing == memory
@@ -132,43 +137,77 @@ function query_chain(expr::Expr)
             (sym,memory) = chain_convert(chain.rhs)
         end
     end
-    (chain,sym,memory)
+    PointChain(sym, memory, chain)
 end
 
 # @query
 macro query(sym::Symbol)
-    esc(sym)
-end
-macro query(expr::Expr)
-    (chain,sym,memory) = query_chain(expr)
-    if nothing == memory
-        quote
-            $chain
-        end
+    if isdefined(sym)
+        esc(sym)
     else
-        quote
-            mem = $(esc(memory))
-            request(mem.app, "/query", params(($sym,mem), $chain))
+        global current_app
+        println("current_app", current_app)
+        if isa(current_app, App)
+            request(current_app, "/query", params((nothing,nothing), Getter([sym])))
+        else
+            esc(sym)
         end
     end
 end
 
-# query_request
-function query_request(sym::Symbol)
-    if isdefined(sym)
-        eval(parse("Main.$sym"))
+macro query(expr::Expr)
+    point = pointchainof(expr)
+    if nothing == point.memory
+        global current_app
+        if isa(current_app, App)
+            request(current_app, "/query", params((nothing,nothing), point.chain))
+        else
+            point.chain
+        end
     else
-        sym
-    end
-end
-function query_request(expr::Expr)
-    (chain,sym,memory) = query_chain(expr)
-    if nothing == memory
-        chain
-    else
-        if isdefined(memory)
-            mem = eval(parse("Main.$memory"))
-            request(mem.app, "/query", params((sym,mem), chain))
+        quote
+            sym = $(point).name
+            mem = $(esc(point.memory))
+            request(mem.app, "/query", params((sym,mem), $(point.chain)))
         end
     end
 end
+
+
+# query_request
+function query_request(sym::Symbol)
+    if isdefined(sym)
+        eval(Main, quote
+            $(sym)
+        end)
+    else
+        global current_app
+        if isa(current_app, App)
+            request(current_app, "/query", params((nothing,nothing), Getter([sym])))
+        else
+            esc(sym)
+        end
+    end
+end
+
+function query_request(expr::Expr)
+    point = pointchainof(expr)
+    if nothing == point.memory
+        global current_app
+        eval(Main, quote
+            if isa(current_app, App)
+                request(current_app, "/query", params((nothing,nothing), $(point.chain)))
+            else
+                $(point.chain)
+            end
+        end)
+    else
+        eval(Main, quote
+            sym = $(point).name
+            mem = $(Main.(point.memory))
+            request(mem.app, "/query", params((sym,mem), $(point.chain)))
+        end)
+    end
+end
+
+query_request(any::Any) = any
