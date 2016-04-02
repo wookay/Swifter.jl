@@ -30,3 +30,5 @@ outrect = "{{33, 50}, {531, 200}}"
 
 @query rect = CGRectMake(1,2,5,6)
 @test Any["call"=>Any[:CGRectMake,Any[1,2,5,6]]] == Swifter.rect
+
+@query vc.view.subviews[0].backgroundColor = UIColor.redColor()
