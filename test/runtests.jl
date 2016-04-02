@@ -3,6 +3,7 @@ using Base.Test
 
 if VERSION.minor < 5
     macro testset(name, block)
+        println(name)
         eval(block)
     end
 end

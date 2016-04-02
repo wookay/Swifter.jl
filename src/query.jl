@@ -17,6 +17,7 @@ function chains(expr::Expr)
     end
     symbols
 end
+chains(any::Any) = Any[]
 
 function chaining(expr::Expr, depth::Int, symbols::Vector)
     if :call == expr.head
@@ -89,7 +90,10 @@ function sym_to_mem(symmem, vec::Vector)
                     val = eval(Main, quote
                         $(var)
                     end)
-                    return first(chains(val))
+                    vals = chains(val)
+                    if !isempty(vals)
+                        return first(vals)
+                    end
                 end
             elseif :call == first(item)
                 return "call"=>last(item)
@@ -188,9 +192,9 @@ macro query(sym::Symbol)
 end
 
 macro query(expr::Expr)
+    global current_app
     point = pointchainof(expr)
     if nothing == point.memory
-        global current_app
         var_request(current_app, "/query", params((nothing,nothing), point.chain))
     else
         quote
@@ -199,7 +203,6 @@ macro query(expr::Expr)
             if isa(mem, Swifter.Memory)
                 var_request(mem.app, "/query", params((sym,mem), $(point.chain)))
             else
-                global current_app
                 var_request(current_app, "/query", params((nothing,nothing), $(point.chain)))
             end
         end
@@ -214,9 +217,9 @@ function query_request(sym::Symbol)
 end
 
 function query_request(expr::Expr)
+    global current_app
     point = pointchainof(expr)
     if nothing == point.memory
-        global current_app
         eval(Main, quote
             Swifter.var_request(current_app, "/query", Swifter.params((nothing,nothing), $(point.chain)))
         end)
@@ -227,8 +230,7 @@ function query_request(expr::Expr)
             if isa(mem, Swifter.Memory)
                 Swifter.var_request(mem.app, "/query", Swifter.params((sym,mem), $(point.chain)))
             else
-                global current_app
-                var_request(current_app, "/query", params((nothing,nothing), $(point.chain)))
+                Swifter.var_request(current_app, "/query", Swifter.params((nothing,nothing), $(point.chain)))
             end
         end)
     end
