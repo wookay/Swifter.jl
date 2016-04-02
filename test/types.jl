@@ -2,7 +2,7 @@ using Swifter
 using Base.Test
 
 import Swifter: Memory, Getter, Setter, PointChain
-import Swifter: sym_to_mem, querychainof, pointchainof
+import Swifter: params, sym_to_mem, querychainof, pointchainof
 
 @test App("") == App("")
 @test Memory(App(""), "") == Memory(App(""), "")
@@ -14,10 +14,9 @@ expr = :(vc.view.backgroundColor = UIColor.greenColor())
 @test Setter([:vc,:view,:backgroundColor],[:UIColor,(:call,:greenColor)]) == querychainof(expr)
 @test PointChain(:notfound, nothing,Setter([:vc,:view,:backgroundColor],[:UIColor,(:call,:greenColor)])) == pointchainof(expr)
 
-@test Getter([:vc,:view]) == expand(@query vc.view)
-@test Setter([:vc,:view,:backgroundColor],[:UIColor,(:call,:greenColor)]) == expand(@query vc.view.backgroundColor = UIColor.greenColor())
+@test "needs initial" == (@query vc.view)
 
 @test Pair["address"=>"","symbol"=>:view,"symbol"=>:backgroundColor] == sym_to_mem((:vc,Memory(App(""),"")), [(:isdefined,:vc),:view,:backgroundColor])
 
 sym = :UIApplication
-@test Dict("lhs"=>"[{\"first\":\"symbol\",\"second\":\"UIApplication\"}]","type"=>"Getter") == params((nothing,nothing), Getter([sym]))
+@test Dict("lhs"=>Any["symbol"=>:UIApplication],"type"=>"Getter") == params((nothing,nothing), Getter([sym]))

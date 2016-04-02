@@ -14,3 +14,7 @@ end
 @testset "query.jl" begin
     include("query.jl")
 end
+
+@testset "mockserver.jl" begin
+    include("mockserver.jl")
+end

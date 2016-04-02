@@ -4,7 +4,7 @@ __precompile__(true)
 
 import Requests: post, json
 
-export initial, request, current_app
+export initial, current_app, @query
 
 include("query.jl")
 include("repl.jl")
@@ -23,9 +23,7 @@ initial(url::AbstractString) = initial(App(url))
 function initial(app::App)
     dict = request(app, "/initial", Dict())
     global current_app
-    if isa(current_app, Void)
-        current_app = app
-    end
+    current_app = app
     Memory(app, dict["address"]) 
 end
 

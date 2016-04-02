@@ -1,28 +1,32 @@
 using Swifter
 using Base.Test
 
-using HttpServer
+import Swifter: Memory, Getter, Setter, PointChain
+import Swifter: params, sym_to_mem, querychainof, pointchainof
 
-http = HttpHandler() do req::Request, res::Response
-    # println("req ", req.resource)
-    if ismatch(r"^/initial", req.resource)
-        Response("""{"result": {"address": ""}}""")
-    elseif ismatch(r"^/query", req.resource)
-        Response("""{"result": "UIDeviceRGBColorSpace 0 1 0 1"}""")
-    else
-        Response("""{"failed": 0}""")
-    end
-end
-server = Server(http)
-@async run(server, 8000)
-sleep(0.1)
+text = "Hello world"
+@query vc.label.text = text
 
-vc = initial("http://localhost:8000")
-result = @query vc.view.backgroundColor
+@query intext = "inside"
+@query vc.label.text = intext
 
-@test "UIDeviceRGBColorSpace 0 1 0 1" == result
+@query intext = text
+@query vc.label.text = intext
 
-try
-    close(server.http)
-catch e
-end
+fontcall = @query font = UIFont(name: "Courier", size: 90)
+@test Any["call"=>Any[:UIFont,Any[Any[:name,"Courier"],Any[:size,90]]]] == fontcall
+@test Any["call"=>Any[:UIFont,Any[Any[:name,"Courier"],Any[:size,90]]]] == Swifter.font
+
+
+outrect = "{{33, 50}, {531, 200}}"
+@query vc.label.frame = outrect
+
+@query inrect = "{{33, 50}, {131, 200}}"
+@test Any["string"=>"{{33, 50}, {131, 200}}"] == Swifter.inrect
+
+@query inrect = outrect
+@test Any["string"=>"{{33, 50}, {531, 200}}"] == Swifter.inrect
+
+
+@query rect = CGRectMake(1,2,5,6)
+@test Any["call"=>Any[:CGRectMake,Any[1,2,5,6]]] == Swifter.rect
