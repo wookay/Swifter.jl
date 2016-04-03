@@ -1,7 +1,7 @@
 using Swifter
 using Base.Test
 
-import Swifter: Memory, Getter, Setter, PointChain
+import Swifter: Memory, Getter, Setter, PointChain, App, QueryResult
 import Swifter: params, sym_to_mem, querychainof, pointchainof
 
 @test App("") == App("")
@@ -14,7 +14,7 @@ expr = :(vc.view.backgroundColor = UIColor.greenColor())
 @test Setter([:vc,:view,:backgroundColor],[:UIColor,(:call,:greenColor)]) == querychainof(expr)
 @test PointChain(:notfound, nothing,Setter([:vc,:view,:backgroundColor],[:UIColor,(:call,:greenColor)])) == pointchainof(expr)
 
-@test "needs initial" == (@query vc.view)
+@test QueryResult(:symbol, "Needs initial vc") == (@query vc.view)
 
 @test Pair["address"=>"","symbol"=>:view,"symbol"=>:backgroundColor] == sym_to_mem((:vc,Memory(App(""),"")), [(:isdefined,:vc),:view,:backgroundColor])
 

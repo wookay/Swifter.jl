@@ -179,44 +179,37 @@ function var_request(app::Union{Void,App}, verb::AbstractString, dict::Dict)
         end
     end
     if isa(app, App)
-        request(app, verb, wrap_json(dict))
+        info = request(app, verb, wrap_json(dict))
+        if haskey(info, "result")
+            return QueryResult(:result, info["result"])
+        elseif haskey(info, "symbol")
+            return QueryResult(:symbol, info["symbol"])
+        else
+            return QueryResult(:symbol, "Unknown")
+        end
     else
-        return "needs initial"
+        return QueryResult(:symbol, "Needs initial vc")
     end
 end
+
 
 # @query
 macro query(sym::Symbol)
-    global current_app
-    var_request(current_app, "/query", params((nothing,nothing), Getter([sym])))
+    query(sym)
 end
 
 macro query(expr::Expr)
-    global current_app
-    point = pointchainof(expr)
-    if nothing == point.memory
-        var_request(current_app, "/query", params((nothing,nothing), point.chain))
-    else
-        quote
-            sym = $(point).name
-            mem = $(esc(point.memory))
-            if isa(mem, Swifter.Memory)
-                var_request(mem.app, "/query", params((sym,mem), $(point.chain)))
-            else
-                var_request(current_app, "/query", params((nothing,nothing), $(point.chain)))
-            end
-        end
-    end
+    query(expr)
 end
 
 
-# query_request
-function query_request(sym::Symbol)
+# query
+function query(sym::Symbol)
     global current_app
     Swifter.var_request(current_app, "/query", Swifter.params((nothing,nothing), Getter([sym])))
 end
 
-function query_request(expr::Expr)
+function query(expr::Expr)
     global current_app
     point = pointchainof(expr)
     if nothing == point.memory
@@ -236,4 +229,4 @@ function query_request(expr::Expr)
     end
 end
 
-query_request(any::Any) = any
+query(any::Any) = any

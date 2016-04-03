@@ -1,8 +1,6 @@
 # types.jl
 
-import Base: ==
-
-export App
+import Base: ==, show
 
 type App
     url::AbstractString
@@ -31,6 +29,10 @@ type PointChain
     chain::QueryChain
 end
 
+type QueryResult
+    name::Symbol
+    value::Any
+end
 
 function ==(lhs::App, rhs::App)
     return lhs.url == rhs.url
@@ -50,4 +52,16 @@ end
 
 function ==(lhs::PointChain, rhs::PointChain)
     return lhs.name == rhs.name && lhs.memory == rhs.memory && lhs.chain == rhs.chain
+end
+
+function ==(lhs::QueryResult, rhs::QueryResult)
+    return lhs.name == rhs.name && lhs.value == rhs.value
+end
+
+function Base.show(io::IO, result::QueryResult)
+    if :symbol == result.name
+        print_with_color(:red, result.value)
+    else
+        print(io, result.value)
+    end
 end

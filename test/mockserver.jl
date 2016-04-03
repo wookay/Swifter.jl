@@ -20,7 +20,7 @@ sleep(0.1)
 vc = initial("http://localhost:8000")
 result = @query vc.view.backgroundColor
 
-@test "UIDeviceRGBColorSpace 0 1 0 1" == result
+@test QueryResult(:result, "UIDeviceRGBColorSpace 0 1 0 1") == result
 
 try
     close(server.http)
