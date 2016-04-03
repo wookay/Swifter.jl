@@ -60,7 +60,9 @@ end
 
 function Base.show(io::IO, result::QueryResult)
     if :symbol == result.name
-        print_with_color(:red, result.value)
+        print_with_color(:red, io, result.value)
+    elseif :string == result.name
+        print(io, repr(result.value))
     else
         print(io, result.value)
     end

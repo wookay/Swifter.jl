@@ -180,13 +180,7 @@ function var_request(app::Union{Void,App}, verb::AbstractString, dict::Dict)
     end
     if isa(app, App)
         info = request(app, verb, wrap_json(dict))
-        if haskey(info, "result")
-            return QueryResult(:result, info["result"])
-        elseif haskey(info, "symbol")
-            return QueryResult(:symbol, info["symbol"])
-        else
-            return QueryResult(:symbol, "Unknown")
-        end
+        return QueryResult(symbol(info["type"]), info["value"])
     else
         return QueryResult(:symbol, "Needs initial vc")
     end

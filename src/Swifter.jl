@@ -23,7 +23,7 @@ function initial(app::App)
     dict = request(app, "/initial", Dict())
     global current_app
     current_app = app
-    Memory(app, dict["result"]["address"])
+    Memory(app, dict["value"]["address"])
 end
 
 function __init__()
