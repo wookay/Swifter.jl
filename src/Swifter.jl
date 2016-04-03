@@ -1,30 +1,29 @@
 module Swifter
 
-#__precompile__(true)
+__precompile__(true)
 
-import Requests: get, json
+import Requests: post, json
 
-export initial, query, @query
+export current_app, initial, @query, query
 
 include("query.jl")
 include("repl.jl")
 
+current_app = nothing
+
 request(app::App, verb::AbstractString, pair::Pair) = request(app, verb, Dict(pair))
 request(memory::Memory, verb::AbstractString, dict::Dict) = request(memory.app, verb, dict)
 function request(app::App, verb::AbstractString, dict::Dict)
-    resp = get("$(app.url)$(verb)"; query = dict)
-    info = json(resp)
-    haskey(info, "symbol") ? Symbol(info["symbol"]) : info["result"]
+    resp = post("$(app.url)$(verb)"; json = dict)
+    json(resp)
 end
 
 initial(url::AbstractString) = initial(App(url))
 function initial(app::App)
     dict = request(app, "/initial", Dict())
-    Memory(app, dict["address"]) 
-end
-
-function query(app::App, str::AbstractString)
-    request(app, "/query", query_params(app, str))
+    global current_app
+    current_app = app
+    Memory(app, dict["value"]["address"])
 end
 
 function __init__()

@@ -4,9 +4,10 @@ import JSON
 
 include("types.jl")
 
-chains(sym::Symbol) = Any["symbol"=>sym]
+chains(sym::Symbol) = Any[isdefined(sym) ? (:isdefined, sym) : "symbol"=>sym]
 chains(n::Int) = Any["int"=>n]
 chains(n::Float64) = Any["float"=>n]
+chains(n::Bool) = Any["bool"=>n]
 chains(str::AbstractString) = Any["string"=>str]
 function chains(expr::Expr)
     symbols = chaining(expr, 0, [])
@@ -16,6 +17,7 @@ function chains(expr::Expr)
     end
     symbols
 end
+chains(any::Any) = Any[]
 
 function chaining(expr::Expr, depth::Int, symbols::Vector)
     if :call == expr.head
@@ -65,7 +67,7 @@ function chaining(expr::Expr, depth::Int, symbols::Vector)
     symbols
 end
 
-function query_expr(expr::Expr)
+function querychainof(expr::Expr)
     if :(=) == expr.head
         lhs,rhs = expr.args
         lsym = chains(lhs)
@@ -81,8 +83,17 @@ function sym_to_mem(symmem, vec::Vector)
     map(vec) do item
         if isa(item,Tuple)
             if :isdefined == first(item)
-                if sym == string(last(item))
+                if sym == last(item)
                     return "address"=>mem.address
+                else
+                    var = last(item)
+                    val = eval(Main, quote
+                        $(var)
+                    end)
+                    vals = chains(val)
+                    if !isempty(vals)
+                        return first(vals)
+                    end
                 end
             elseif :call == first(item)
                 return "call"=>last(item)
@@ -99,17 +110,13 @@ end
 
 function params(symmem, setter::Setter)
     Dict("type"=>"Setter",
-         "lhs"=>JSON.json(sym_to_mem(symmem, setter.lhs)),
-         "rhs"=>JSON.json(sym_to_mem(symmem, setter.rhs)))
+         "lhs"=>sym_to_mem(symmem, setter.lhs),
+         "rhs"=>sym_to_mem(symmem, setter.rhs))
 end
 
 function params(symmem, getter::Getter)
     Dict("type"=>"Getter",
-         "lhs"=>JSON.json(sym_to_mem(symmem, getter.lhs)))
-end
-
-function query_params(app::App, str::AbstractString)
-    params(nothing, query_expr(Expr(:block, parse(str))))
+         "lhs"=>sym_to_mem(symmem, getter.lhs))
 end
 
 function chain_convert(vec::Vector)
@@ -120,11 +127,11 @@ function chain_convert(vec::Vector)
             end
         end
     end
-    return (nothing, nothing)
+    return (:notfound, nothing)
 end
 
-function query_chain(expr::Expr)
-    chain = query_expr(expr)
+function pointchainof(expr::Expr)
+    chain = querychainof(expr)
     memory = nothing
     (sym,memory) = chain_convert(chain.lhs)
     if nothing == memory
@@ -132,43 +139,88 @@ function query_chain(expr::Expr)
             (sym,memory) = chain_convert(chain.rhs)
         end
     end
-    (chain,sym,memory)
+    PointChain(sym, memory, chain)
 end
+
+function wrap_json(dict::Dict)
+    dict["lhs"] = JSON.json(dict["lhs"])
+    if haskey(dict, "rhs")
+        dict["rhs"] = JSON.json(dict["rhs"])
+    end
+    return dict
+end
+
+function var_request(app::Union{Void,App}, verb::AbstractString, dict::Dict)
+    lhs = dict["lhs"]
+    if haskey(dict, "rhs")
+        rhs = dict["rhs"]
+        if 1 == length(lhs)
+            (name,sym) = collect(first(lhs))
+            if "symbol" == name
+                eval(Swifter, quote
+                    $(sym) = $(dict["rhs"])
+                end)
+                return getfield(Swifter, sym)
+            end
+        elseif 1 == length(rhs)
+            (name,sym) = collect(first(rhs))
+            if "symbol" == name && isdefined(Swifter, sym)
+                dict["rhs"] = getfield(Swifter, sym)
+            end
+        end
+    elseif 1 == length(lhs)
+        (name,sym) = collect(first(lhs))
+        if "symbol" == name && isa(sym, Symbol)
+            if isdefined(Swifter, sym)
+                return getfield(Swifter, sym)
+            elseif isdefined(Main, sym)
+                return getfield(Main, sym)
+            end
+        end
+    end
+    if isa(app, App)
+        info = request(app, verb, wrap_json(dict))
+        return QueryResult(symbol(info["type"]), info["value"])
+    else
+        return QueryResult(:symbol, "Needs initial vc")
+    end
+end
+
 
 # @query
 macro query(sym::Symbol)
-    esc(sym)
+    query(sym)
 end
+
 macro query(expr::Expr)
-    (chain,sym,memory) = query_chain(expr)
-    if nothing == memory
-        quote
-            $chain
-        end
+    query(expr)
+end
+
+
+# query
+function query(sym::Symbol)
+    global current_app
+    Swifter.var_request(current_app, "/query", Swifter.params((nothing,nothing), Getter([sym])))
+end
+
+function query(expr::Expr)
+    global current_app
+    point = pointchainof(expr)
+    if nothing == point.memory
+        eval(Main, quote
+            Swifter.var_request(current_app, "/query", Swifter.params((nothing,nothing), $(point.chain)))
+        end)
     else
-        quote
-            mem = $(esc(memory))
-            request(mem.app, "/query", params(($sym,mem), $chain))
-        end
+        eval(Main, quote
+            sym = $(point).name
+            mem = $(Main.(point.memory))
+            if isa(mem, Swifter.Memory)
+                Swifter.var_request(mem.app, "/query", Swifter.params((sym,mem), $(point.chain)))
+            else
+                Swifter.var_request(current_app, "/query", Swifter.params((nothing,nothing), $(point.chain)))
+            end
+        end)
     end
 end
 
-# query_request
-function query_request(sym::Symbol)
-    if isdefined(sym)
-        eval(parse("Main.$sym"))
-    else
-        sym
-    end
-end
-function query_request(expr::Expr)
-    (chain,sym,memory) = query_chain(expr)
-    if nothing == memory
-        chain
-    else
-        if isdefined(memory)
-            mem = eval(parse("Main.$memory"))
-            request(mem.app, "/query", params((sym,mem), chain))
-        end
-    end
-end
+query(any::Any) = any
