@@ -16,6 +16,10 @@ end
     include("query.jl")
 end
 
+@testset "jupyter.jl" begin
+    include("jupyter.jl")
+end
+
 @testset "mockserver.jl" begin
     include("mockserver.jl")
 end

@@ -108,13 +108,13 @@ function sym_to_mem(symmem, vec::Vector)
     end
 end
 
-function params(symmem, setter::Setter)
+function param_dict(symmem, setter::Setter)
     Dict("type"=>"Setter",
          "lhs"=>sym_to_mem(symmem, setter.lhs),
          "rhs"=>sym_to_mem(symmem, setter.rhs))
 end
 
-function params(symmem, getter::Getter)
+function param_dict(symmem, getter::Getter)
     Dict("type"=>"Getter",
          "lhs"=>sym_to_mem(symmem, getter.lhs))
 end
@@ -143,11 +143,12 @@ function pointchainof(expr::Expr)
 end
 
 function wrap_json(dict::Dict)
-    dict["lhs"] = JSON.json(dict["lhs"])
+    params = Dict(dict) 
+    params["lhs"] = JSON.json(params["lhs"])
     if haskey(dict, "rhs")
-        dict["rhs"] = JSON.json(dict["rhs"])
+        params["rhs"] = JSON.json(params["rhs"])
     end
-    return dict
+    return params
 end
 
 function var_request(app::Union{Void,App}, verb::AbstractString, dict::Dict)
@@ -180,9 +181,9 @@ function var_request(app::Union{Void,App}, verb::AbstractString, dict::Dict)
     end
     if isa(app, App)
         info = request(app, verb, wrap_json(dict))
-        return QueryResult(symbol(info["type"]), info["value"])
+        return QueryResult(symbol(info["type"]), info["value"], (app,verb,dict))
     else
-        return QueryResult(:symbol, "Needs initial vc")
+        return QueryResult(:symbol, "Needs initial vc", (app,verb,dict))
     end
 end
 
@@ -200,7 +201,7 @@ end
 # query
 function query(sym::Symbol)
     global current_app
-    Swifter.var_request(current_app, "/query", Swifter.params((nothing,nothing), Getter([sym])))
+    Swifter.var_request(current_app, "/query", Swifter.param_dict((nothing,nothing), Getter([sym])))
 end
 
 function query(expr::Expr)
@@ -208,16 +209,16 @@ function query(expr::Expr)
     point = pointchainof(expr)
     if nothing == point.memory
         eval(Main, quote
-            Swifter.var_request(current_app, "/query", Swifter.params((nothing,nothing), $(point.chain)))
+            Swifter.var_request(current_app, "/query", Swifter.param_dict((nothing,nothing), $(point.chain)))
         end)
     else
         eval(Main, quote
             sym = $(point).name
             mem = $(Main.(point.memory))
             if isa(mem, Swifter.Memory)
-                Swifter.var_request(mem.app, "/query", Swifter.params((sym,mem), $(point.chain)))
+                Swifter.var_request(mem.app, "/query", Swifter.param_dict((sym,mem), $(point.chain)))
             else
-                Swifter.var_request(current_app, "/query", Swifter.params((nothing,nothing), $(point.chain)))
+                Swifter.var_request(current_app, "/query", Swifter.param_dict((nothing,nothing), $(point.chain)))
             end
         end)
     end
