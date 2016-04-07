@@ -1,9 +1,6 @@
 using Swifter
 using Base.Test
 
-import Swifter: Memory, Getter, Setter, PointChain
-import Swifter: params, sym_to_mem, querychainof, pointchainof
-
 text = "Hello world"
 @query vc.label.text = text
 

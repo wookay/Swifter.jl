@@ -32,6 +32,7 @@ end
 type QueryResult
     name::Symbol
     value::Any
+    params::Union{Void,Tuple}
 end
 
 function ==(lhs::App, rhs::App)
@@ -55,7 +56,7 @@ function ==(lhs::PointChain, rhs::PointChain)
 end
 
 function ==(lhs::QueryResult, rhs::QueryResult)
-    return lhs.name == rhs.name && lhs.value == rhs.value
+    return lhs.name == rhs.name && lhs.value == rhs.value && lhs.params == rhs.params
 end
 
 function Base.show(io::IO, result::QueryResult)

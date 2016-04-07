@@ -8,6 +8,7 @@ export current_app, initial, @query, query
 
 include("query.jl")
 include("repl.jl")
+include("jupyter.jl")
 
 current_app = nothing
 

@@ -1,6 +1,8 @@
 using Swifter
 using Base.Test
 
+import Swifter: QueryResult, App, Memory, request, var_request
+
 using HttpServer
 
 http = HttpHandler() do req::Request, res::Response
@@ -18,12 +20,22 @@ server = Server(http)
 sleep(0.1)
 
 result = @query vc.view.backgroundColor
-@test QueryResult(:symbol, "Needs initial vc") == result
+@test QueryResult(:symbol, "Needs initial vc", (nothing,"/query",Dict("lhs"=>Any["symbol"=>:vc,"symbol"=>:view,"symbol"=>:backgroundColor],"type"=>"Getter"))) == result
 
 vc = initial("http://localhost:8000")
 
 result = @query vc.view.backgroundColor
-@test QueryResult(:any, "UIDeviceRGBColorSpace 0 1 0 1") == result
+app = App("http://localhost:8000")
+@test QueryResult(:any, "UIDeviceRGBColorSpace 0 1 0 1", (app,"/query",Dict("lhs"=>Any["address"=>"","symbol"=>:view,"symbol"=>:backgroundColor],"type"=>"Getter"))) == result
+@test result == query(:(vc.view.backgroundColor))
+
+request(app, "/query", Pair(1,2))
+request(Memory(app,""), "/query", Dict(1=>2))
+request(app, "/query", Dict(1=>2))
+
+dict = Dict("lhs"=>Any["symbol"=>:vc])
+var_request(app, "/query", dict)
+
 
 try
     close(server.http)
