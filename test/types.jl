@@ -3,7 +3,7 @@ using Base.Test
 
 import Swifter: Memory, Getter, Setter, PointChain, App, QueryResult
 import Swifter: param_dict, sym_to_mem, querychainof, pointchainof
-import Swifter: chains, chaining, chain_convert, wrap_json, var_request
+import Swifter: chains, chaining, chain_convert, wrap_json, var_request, evaluate
 
 @test App("") == App("")
 @test Memory(App(""), "") == Memory(App(""), "")
@@ -45,7 +45,8 @@ expr = parse("vc.view")
 @test Dict("lhs"=>JSON.json("vc")) == wrap_json(Dict("lhs"=>"vc"))
 @test Dict("lhs"=>JSON.json("vc"),"rhs"=>JSON.json("t")) == wrap_json(Dict("lhs"=>"vc", "rhs"=>"t"))
 
-app = App("")
 verb = "/query"
-dict = Dict("lhs"=>[])
-@test QueryResult(:symbol, "Needs initial vc", (nothing,verb,dict)) == var_request(nothing, "/query", dict)
+dict = Dict("lhs"=>Any["symbol"=>:vc])
+@test QueryResult(:symbol, "Needs initial vc", (nothing,verb,dict)) == var_request(nothing, verb, dict)
+
+@test "3" == evaluate(Main, "$(1+2)")

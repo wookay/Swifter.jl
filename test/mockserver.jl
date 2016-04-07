@@ -1,7 +1,7 @@
 using Swifter
 using Base.Test
 
-import Swifter: QueryResult, App, Memory, request
+import Swifter: QueryResult, App, Memory, request, var_request
 
 using HttpServer
 
@@ -32,6 +32,9 @@ app = App("http://localhost:8000")
 request(app, "/query", Pair(1,2))
 request(Memory(app,""), "/query", Dict(1=>2))
 request(app, "/query", Dict(1=>2))
+
+dict = Dict("lhs"=>Any["symbol"=>:vc])
+var_request(app, "/query", dict)
 
 
 try

@@ -78,6 +78,8 @@ function querychainof(expr::Expr)
     end
 end
 
+evaluate(m::Module, e::ANY) = eval(m, e)
+
 function sym_to_mem(symmem, vec::Vector)
     sym,mem = isa(symmem, Void) ? ("","") : symmem
     map(vec) do item
@@ -87,7 +89,7 @@ function sym_to_mem(symmem, vec::Vector)
                     return "address"=>mem.address
                 else
                     var = last(item)
-                    val = eval(Main, quote
+                    val = evaluate(Main, quote
                         $(var)
                     end)
                     vals = chains(val)
@@ -208,11 +210,11 @@ function query(expr::Expr)
     global current_app
     point = pointchainof(expr)
     if nothing == point.memory
-        eval(Main, quote
+        evaluate(Main, quote
             Swifter.var_request(current_app, "/query", Swifter.param_dict((nothing,nothing), $(point.chain)))
         end)
     else
-        eval(Main, quote
+        evaluate(Main, quote
             sym = $(point).name
             mem = $(Main.(point.memory))
             if isa(mem, Swifter.Memory)
