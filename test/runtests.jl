@@ -16,6 +16,10 @@ end
     include("query.jl")
 end
 
+@testset "testing.jl" begin
+    include("testing.jl")
+end
+
 @testset "jupyter.jl" begin
     include("jupyter.jl")
 end

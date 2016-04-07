@@ -9,6 +9,7 @@ export current_app, initial, @query, query
 include("query.jl")
 include("repl.jl")
 include("jupyter.jl")
+include("testing.jl")
 
 current_app = nothing
 
