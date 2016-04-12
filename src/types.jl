@@ -33,6 +33,9 @@ type QueryResult
     name::Symbol
     value::Any
     params::Union{Void,Tuple}
+    function QueryResult(name, value, params)
+        new(name, :symbol == name && "nothing" == value ? nothing : value, params)
+    end
 end
 
 function ==(lhs::App, rhs::App)
@@ -61,7 +64,11 @@ end
 
 function Base.show(io::IO, result::QueryResult)
     if :symbol == result.name
-        print_with_color(:red, io, result.value)
+        if isa(result.value, Void)
+            #print(io, repr(result.value))
+        else
+            print_with_color(:red, io, result.value)
+        end
     elseif :string == result.name
         print(io, repr(result.value))
     else

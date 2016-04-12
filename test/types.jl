@@ -50,3 +50,6 @@ dict = Dict("lhs"=>Any["symbol"=>:vc])
 @test QueryResult(:symbol, "Needs initial vc", (nothing,verb,dict)) == var_request(nothing, verb, dict)
 
 @test "3" == evaluate(Main, "$(1+2)")
+
+expr = parse("b.g(5)")
+@test Any[:b,(:call,Any[:g,Any[5]])] == chaining(expr, 0, [])

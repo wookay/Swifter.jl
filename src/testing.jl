@@ -13,3 +13,4 @@ import Base: ==
 ==(lhs::Vector{ASCIIString}, rhs::QueryResult) = lhs == rhs.value
 ==(lhs::Vector{AbstractString}, rhs::QueryResult) = lhs == rhs.value
 ==(lhs::Dict, rhs::QueryResult) = lhs == rhs.value
+==(lhs::Void, rhs::QueryResult) = lhs == rhs.value

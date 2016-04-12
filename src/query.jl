@@ -45,7 +45,11 @@ function chaining(expr::Expr, depth::Int, symbols::Vector)
                   push!(callargs, ex)
               else
                   isargs = true
-                  push!(symbols, (:call, ex))
+                  if isa(ex, Symbol)
+                      push!(symbols, (:call, ex))
+                  else
+                      push!(callargs, ex)
+                  end
               end
             end
         end
