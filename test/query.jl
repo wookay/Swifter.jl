@@ -1,31 +1,50 @@
 using Swifter
 using Base.Test
 
+import Swifter: chains
+
+@query vc.view
+
 text = "Hello world"
 @query vc.label.text = text
+
+@test isdefined(Main, :text)
 
 @query intext = "inside"
 @query vc.label.text = intext
 
-@query intext = text
-@query vc.label.text = intext
+@test Any[:text] == chains(:text)
 
-fontcall = @query font = UIFont(name: "Courier", size: 90)
-@test Any["call"=>Any[:UIFont,Any[Any[:name,"Courier"],Any[:size,90]]]] == fontcall
-@test Any["call"=>Any[:UIFont,Any[Any[:name,"Courier"],Any[:size,90]]]] == Swifter.font
-
+pairs = chains(:(UIFont(name: "Courier", size: 90)))
+@test Any[(:call, (:UIFont,Any[Any[:name,"Courier"],Any[:size,90]]))] == pairs
 
 outrect = "{{33, 50}, {531, 200}}"
 @query vc.label.frame = outrect
 
 @query inrect = "{{33, 50}, {131, 200}}"
-@test Any["string"=>"{{33, 50}, {131, 200}}"] == Swifter.inrect
+@test "{{33, 50}, {131, 200}}" == Swifter.env[:inrect]
 
 @query inrect = outrect
-@test Any["string"=>"{{33, 50}, {531, 200}}"] == Swifter.inrect
-
+@test "{{33, 50}, {531, 200}}" == Swifter.env[:inrect]
 
 @query rect = CGRectMake(1,2,5,6)
-@test Any["call"=>Any[:CGRectMake,Any[1,2,5,6]]] == Swifter.rect
+@test "You need to initial" == Swifter.env[:rect]
+#@test (:call,(:CGRectMake,Any[1,2,5,6])) == Swifter.env[:rect]
 
 @query vc.view.subviews[0].backgroundColor = UIColor.redColor()
+
+@test Any[(:call,:tap)] == chains(:(tap()))
+
+@test Any[:view, (:call,:tap)] == chains(:(view.tap()))
+
+@query vc.view.alpha = 0.3
+
+
+
+if VERSION >= v"0.5-" @eval begin
+
+@query intext = text
+@test "Hello world" == @query intext
+@query vc.label.text = intext
+
+end end

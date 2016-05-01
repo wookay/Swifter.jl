@@ -1,11 +1,14 @@
 using Swifter
 using Base.Test
 
-import Swifter: QueryResult
+import Swifter: QueryResult, ResultInfo, App
 
-@test 3 == QueryResult(:any, 3, (nothing,"",Dict()))
-@test 1.2 == QueryResult(:any, 1.2, (nothing,"",Dict()))
-@test true == QueryResult(:any, true, (nothing,"",Dict()))
-@test "Hello" == QueryResult(:any, "Hello", (nothing,"",Dict()))
-@test ["A"] == QueryResult(:any, ["A"], (nothing,"",Dict()))
-@test Dict(1=>2) == QueryResult(:any, Dict(1=>2), (nothing,"",Dict()))
+@test 3 == QueryResult(ResultInfo(:any, 3), App(""),"",Dict())
+@test 1.2 == QueryResult(ResultInfo(:any, 1.2), App(""),"",Dict())
+@test true == QueryResult(ResultInfo(:any, true), App(""),"",Dict())
+@test "Hello" == QueryResult(ResultInfo(:any, "Hello"), App(""),"",Dict())
+@test ["A"] == QueryResult(ResultInfo(:any, ["A"]), App(""),"",Dict())
+@test ["가"] == QueryResult(ResultInfo(:any, ["가"]), App(""),"",Dict())
+@test Dict(1=>2) == QueryResult(ResultInfo(:any, Dict(1=>2)), App(""),"",Dict())
+
+@test false == (3 === QueryResult(ResultInfo(:any, 3), App(""),"",Dict()))

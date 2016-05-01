@@ -1,43 +1,54 @@
 using Swifter
 using Base.Test
 
-import Swifter: QueryResult, App, Memory, request, var_request
+import Swifter: QueryResult, ResultInfo, App
 
 using HttpServer
+using JSON
 
-http = HttpHandler() do req::Request, res::Response
-    # println("req ", req.resource)
-    if ismatch(r"^/initial", req.resource)
-        Response("""{"type": "any", "value": {"address": ""}}""")
-    elseif ismatch(r"^/query", req.resource)
-        Response("""{"type": "any", "value": "UIDeviceRGBColorSpace 0 1 0 1"}""")
-    else
-        Response("""{"type": "symbol", "value": "Failed"}""")
+function handle(color)
+    current_color = color
+    HttpHandler() do req::Request, res::Response
+        if ismatch(r"^/initial", req.resource)
+            Response("""{"typ": "any", "value": ""}}""")
+        elseif ismatch(r"^/query", req.resource)
+            param = JSON.parse(ASCIIString(req.data))
+            if "Setter" == param["type"]
+                current_color = first(param["rhs"])
+            end
+            Response("""{"typ": "any", "value": "$current_color"}""")
+        else
+            Response("""{"typ": "symbol", "value": "Failed"}""")
+        end
     end
 end
-server = Server(http)
-@async run(server, 8000)
+
+
+param = Dict("lhs"=>Any[(:symbol,:vc),(:symbol,:view),(:symbol,:backgroundColor)], "type"=>"Getter")
+result = @query vc.view.backgroundColor
+@test QueryResult(ResultInfo(:symbol, Swifter.RequireToInitial), App(""),"/query",param) == result
+@test Swifter.RequireToInitial == result
+
+
+server_one = Server(handle("UIDeviceRGBColorSpace 0 0 0 1"))
+server_two = Server(handle("UIDeviceRGBColorSpace 0 1 0 1"))
+@async run(server_one, 8000)
+@async run(server_two, 8001)
 sleep(0.1)
 
-result = @query vc.view.backgroundColor
-@test QueryResult(:symbol, "Needs initial vc", (nothing,"/query",Dict("lhs"=>Any["symbol"=>:vc,"symbol"=>:view,"symbol"=>:backgroundColor],"type"=>"Getter"))) == result
+vc1 = initial("http://localhost:8000")
+vc2 = initial("http://localhost:8001")
 
-vc = initial("http://localhost:8000")
+@test "UIDeviceRGBColorSpace 0 0 0 1" == @query vc1.view.backgroundColor
+@test "UIDeviceRGBColorSpace 0 1 0 1" == @query vc2.view.backgroundColor
 
-result = @query vc.view.backgroundColor
-app = App("http://localhost:8000")
-@test QueryResult(:any, "UIDeviceRGBColorSpace 0 1 0 1", (app,"/query",Dict("lhs"=>Any["address"=>"","symbol"=>:view,"symbol"=>:backgroundColor],"type"=>"Getter"))) == result
-@test result == query(:(vc.view.backgroundColor))
+@query vc1.view.backgroundColor = vc2.view.backgroundColor
 
-request(app, "/query", Pair(1,2))
-request(Memory(app,""), "/query", Dict(1=>2))
-request(app, "/query", Dict(1=>2))
-
-dict = Dict("lhs"=>Any["symbol"=>:vc])
-var_request(app, "/query", dict)
-
+@test "UIDeviceRGBColorSpace 0 1 0 1" == @query vc1.view.backgroundColor
+@test "UIDeviceRGBColorSpace 0 1 0 1" == @query vc2.view.backgroundColor
 
 try
-    close(server.http)
+    close(server_one.http)
+    close(server_two.http)
 catch e
 end

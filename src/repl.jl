@@ -12,7 +12,13 @@ function AddSwifterMode(key, repl)
         on_enter = s->true)
 
     mirepl = isdefined(Base.active_repl,:mi) ? Base.active_repl.mi : Base.active_repl
-    panel.on_done = REPL.respond(line-> query(parse(line)), repl, panel)
+    function linecall(line)
+        try
+            Expr(:macrocall, symbol("@query"), parse(line))
+        catch e_
+        end
+    end
+    panel.on_done = REPL.respond(linecall, repl, panel)
 
     main_mode = repl.interface.modes[1]
     push!(mirepl.interface.modes,panel)

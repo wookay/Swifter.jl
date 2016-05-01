@@ -4,13 +4,8 @@ import Base: ==, show
 
 type App
     url::AbstractString
-    App(url) = new(url)
 end
 
-type Memory
-    app::App
-    address::AbstractString
-end
 
 abstract QueryChain
 
@@ -19,31 +14,62 @@ type Setter <: QueryChain
     rhs::Vector
 end
 
+
 type Getter <: QueryChain
     lhs::Vector
 end
 
-type PointChain
-    name::Symbol
-    memory::Union{Symbol,Void}
-    chain::QueryChain
-end
 
-type QueryResult
-    name::Symbol
+type ResultInfo
+    typ::Symbol
     value::Any
-    params::Union{Void,Tuple}
-    function QueryResult(name, value, params)
-        new(name, :symbol == name && "nothing" == value ? nothing : value, params)
+    address::Union{Void,AbstractString}
+
+    function ResultInfo(typ::Symbol, value::Any)
+        ResultInfo(typ, value, nothing)
+    end
+
+    function ResultInfo(typ::Symbol, value::Any, address::Union{Void,AbstractString})
+        if :symbol == typ && "nothing" == value
+            new(typ, nothing, address)
+        else
+            new(typ, value, address)
+        end
+    end
+
+    function ResultInfo(dict::Dict)
+        if haskey(dict, "address")
+           ResultInfo(symbol(dict["typ"]), dict["value"], dict["address"])
+        else
+           ResultInfo(symbol(dict["typ"]), dict["value"], nothing)
+        end
     end
 end
 
-function ==(lhs::App, rhs::App)
-    return lhs.url == rhs.url
+type QueryResult
+    info::ResultInfo
+    app::App
+    verb::AbstractString
+    param::Dict
+
+    function QueryResult(info::ResultInfo, app::App, verb::AbstractString, param::Dict)
+        new(info, app, verb, param)
+    end
+
+    function QueryResult(dict::Dict, app::App, verb::AbstractString, param::Dict)
+        new(ResultInfo(dict), app, verb, param)
+    end
 end
 
-function ==(lhs::Memory, rhs::Memory)
-    return lhs.app == rhs.app && lhs.address == rhs.address
+
+type CallArg
+    name::Symbol
+    args::Vector
+end
+
+
+function ==(lhs::App, rhs::App)
+    return lhs.url == rhs.url
 end
 
 function ==(lhs::Setter, rhs::Setter)
@@ -54,24 +80,38 @@ function ==(lhs::Getter, rhs::Getter)
     return lhs.lhs == rhs.lhs
 end
 
-function ==(lhs::PointChain, rhs::PointChain)
-    return lhs.name == rhs.name && lhs.memory == rhs.memory && lhs.chain == rhs.chain
+function ==(lhs::ResultInfo, rhs::ResultInfo)
+    return lhs.typ == rhs.typ && lhs.value == rhs.value && lhs.address == rhs.address
 end
 
 function ==(lhs::QueryResult, rhs::QueryResult)
-    return lhs.name == rhs.name && lhs.value == rhs.value && lhs.params == rhs.params
+    return lhs.info == rhs.info && lhs.app == rhs.app && lhs.verb == rhs.verb && lhs.param == rhs.param
 end
 
+
 function Base.show(io::IO, result::QueryResult)
-    if :symbol == result.name
-        if isa(result.value, Void)
-            #print(io, repr(result.value))
+    print(io, result.info)
+end
+
+function Base.show(io::IO, info::ResultInfo)
+    if :symbol == info.typ
+        if isa(info.value, Void)
+            #print(io, repr(info.value))
         else
-            print_with_color(:red, io, result.value)
+            print_with_color(:red, io, info.value)
         end
-    elseif :string == result.name
-        print(io, repr(result.value))
+    elseif :string == info.typ
+        print(io, repr(info.value))
+    elseif isa(info.value, AbstractArray)
+        len = length(info.value)
+        for (idx,el) in enumerate(info.value)
+            print_with_color(:cyan, io, string(idx-1))
+            print(io, Base.color_normal)
+            print(io, " ")
+            print(io, el)
+            idx < len && print(io, "\n")
+        end
     else
-        print(io, result.value)
+        print(io, info.value)
     end
 end
