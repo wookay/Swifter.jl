@@ -2,29 +2,38 @@ module Swifter
 
 __precompile__(true)
 
-import Requests: post, json
+import Requests: post
+using JSON
 
-export current_app, initial, @query, query
+export initial
 
 include("query.jl")
 include("repl.jl")
 include("jupyter.jl")
+include("testing.jl")
 
-current_app = nothing
+current_app = App("")
+env = Dict()
+const RequireToInitial = "You need to initial"
 
 request(app::App, verb::AbstractString, pair::Pair) = request(app, verb, Dict(pair))
-request(memory::Memory, verb::AbstractString, dict::Dict) = request(memory.app, verb, dict)
-function request(app::App, verb::AbstractString, dict::Dict)
-    resp = post("$(app.url)$(verb)"; json = dict)
-    json(resp)
+function request(app::App, verb::AbstractString, param::Dict)
+    if isempty(app.url)
+        Dict("typ"=>"symbol", "value"=>RequireToInitial)
+    else
+        resp = post("$(app.url)$(verb)"; json = param)
+        JSON.parse(utf8(resp.data))
+    end
 end
 
 initial(url::AbstractString) = initial(App(url))
 function initial(app::App)
-    dict = request(app, "/initial", Dict())
+    verb = "/initial"
+    param = Dict()
+    dict = request(app, verb, param)
     global current_app
     current_app = app
-    Memory(app, dict["value"]["address"])
+    QueryResult(dict, app, verb, param)
 end
 
 function __init__()

@@ -3,25 +3,30 @@
 import Base.Markdown: plain, Code, List, tag, htmlesc
 import Base: mimewritable, writemime
 import Requests: get
+import URIParser: escape
+import JSON: json
 
 Base.mimewritable(::Type{MIME"text/markdown"}, result::QueryResult) = true
 
-function path_of_image_from_dict(dict::Dict)
-    lhs = dict["lhs"]
-    join(map(pair->pair.second, lhs), '.')
+function path_of_image_from_param(param::Dict)
+    lhs = param["lhs"]
+    simpler(t::Tuple) = last(t)
+    simpler(a::Any) = a
+    simple = join(map(simpler, lhs), '.')
+    (escape(json(lhs)), simple)
 end
 
 function image_scale(result::QueryResult)
-    m = match(r"= \(([\d\.]*) ([\d\.]*); ([\d\.]*) ([\d\.]*)\);", result.value)
+    m = match(r"= \(([\d\.]*) ([\d\.]*); ([\d\.]*) ([\d\.]*)\);", result.info.value)
     if !isa(m, RegexMatch)
-        m = match(r"= {{([\d\.]*), ([\d\.]*)}, {([\d\.]*), ([\d\.]*)}};", result.value)
+        m = match(r"= {{([\d\.]*), ([\d\.]*)}, {([\d\.]*), ([\d\.]*)}};", result.info.value)
     end
     if isa(m, RegexMatch)
         (x,y,w,h) = map(n->parse(Float32,n), m.captures)
         scale = 1
-        if w > 1000
+        if w > 1000 && h > 500
             scale = 1/5
-        elseif w > 100
+        elseif w > 100 && h > 50
             scale = 1/2
         end
         "width:$(w*scale)px; height: $(h*scale)px;"
@@ -41,24 +46,25 @@ function save_image_url_to_file(url::AbstractString, path::AbstractString, r::Ab
 end
 
 function Base.writemime(stream::IO, mime::MIME"text/markdown", result::QueryResult; kwargs...)
-    if isa(result.value, AbstractArray)
-        plain(stream, List(map(htmlesc, result.value)))
+    if isa(result.info.value, AbstractArray)
+        plain(stream, List(map(htmlesc, result.info.value)))
+    elseif isa(result.info.value, Void)
+        # nothing
     else
-        plain(stream, Code(string(result.value)))
+        plain(stream, Code(string(result.info.value)))
     end
-    if :view == result.name
-        (app,verb,dict) = result.params
-        path = path_of_image_from_dict(dict)
+    if :view == result.info.typ
+        (path,simple) = path_of_image_from_param(result.param)
         r = randstring(10)
-        url = "$(app.url)/image?path=$path&r=$r"
+        url = "$(result.app.url)/image?path=$path&r=$r"
         save_image = true
         if haskey(ENV, "SWIFTER_SAVE_IMAGE")
-            save_image = !(ENV["SWIFTER_SAVE_IMAGE"] in ["false", "0"])
+            save_image = !(ENV["SWIFTER_SAVE_IMAGE"] in [false, "false", "0"])
         end
-        if save_image
-            image_path = save_image_url_to_file(url, path, r)
+        if save_image && !isempty(result.app.url)
+            image_path = save_image_url_to_file(url, simple, r)
             url = "$image_path?r=$r"
         end
-        tag(stream, :img, :src=>url, :alt=>path, :style=>image_scale(result))
+        tag(stream, :img, :src=>url, :alt=>simple, :style=>image_scale(result))
     end
 end
