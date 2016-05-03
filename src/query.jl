@@ -24,27 +24,28 @@ function query_request(expr::Expr)
         rquote = destchains(rhs)
         lhs_issym = isa(lhs, Symbol)
         rhs_issym = isa(rhs, Symbol)
-        rhs_isexpr = isa(rhs, Expr)
         lsymbol = (lhs,)
+        rsymbol = (rhs,)
         quote
             (ldest,lsym) = $lquote
             (rdest,rsym) = $rquote
             rdestination = destinationof(rdest,ldest)
-            rvalue = rsym
-            if $rhs_isexpr
-                param = Dict("type"=>"Getter", "lhs"=>wrap_symbol(rsym))
-                verb = "/query"
-                dict = request(rdestination, verb, param)
-                result = QueryResult(dict, rdestination, verb, param)
-                rvalue = result.info.value
+            rvalue = $lhs_issym ? first(rsym) : rsym
+            if $rhs_issym
+                rvalue = valuate(first($rsymbol))
+            end
+            if isa(ldest, App) && isa(rdest, App) && (ldest.url != rdest.url)
+                if $rhs_issym
+                else
+                    param = Dict("type"=>"Getter", "lhs"=>wrap_symbol(rsym))
+                    verb = "/query"
+                    dict = request(rdestination, verb, param)
+                    result = QueryResult(dict, rdestination, verb, param)
+                    rvalue = result.info.value
+                end
             end
             if $lhs_issym
                 (firstsym,) = $lsymbol
-                if $rhs_isexpr
-                else
-                    (sym,) = rsym
-                    rvalue = isa(sym, Symbol) ? valuate(sym) : sym
-                end
                 Swifter.env[firstsym] = rvalue
             else
                 ldestination = destinationof(ldest,rdest)
@@ -57,21 +58,22 @@ function query_request(expr::Expr)
     else
         lquote = destchains(expr)
         (sym,) = expr.args
-        if 1 == length(expr.args) && isa(expr.args[1], Symbol)
+        quot = quote
+            (ldest,lsym) = $lquote
+            ldestination = destinationof(ldest,nothing)
+            param = Dict("type"=>"Getter", "lhs"=>wrap_symbol(lsym))
+            verb = "/query"
+            dict = request(ldestination, verb, param)
+            QueryResult(dict, ldestination, verb, param)
+        end
+        if 1 == length(expr.args) && isa(sym, Symbol)
             quote
                 (ldest,lsym) = $lquote
                 (val,) = lsym
-                val
+                val == sym ? $quot : val
             end
         else
-            quote
-                (ldest,lsym) = $lquote
-                ldestination = destinationof(ldest,nothing)
-                param = Dict("type"=>"Getter", "lhs"=>wrap_symbol(lsym))
-                verb = "/query"
-                dict = request(ldestination, verb, param)
-                QueryResult(dict, ldestination, verb, param)
-            end
+            quot
         end
     end
 end
