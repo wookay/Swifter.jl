@@ -1,11 +1,13 @@
 module Swifter
 
+#FIXME
 __precompile__(true)
+#__precompile__(true)
 
 import Requests: post
 using JSON
 
-export current_app, initial
+export initial
 
 include("query.jl")
 include("repl.jl")

@@ -39,9 +39,9 @@ type ResultInfo
 
     function ResultInfo(dict::Dict)
         if haskey(dict, "address")
-           ResultInfo(symbol(dict["typ"]), dict["value"], dict["address"])
+           ResultInfo(Symbol(dict["typ"]), dict["value"], dict["address"])
         else
-           ResultInfo(symbol(dict["typ"]), dict["value"], nothing)
+           ResultInfo(Symbol(dict["typ"]), dict["value"], nothing)
         end
     end
 end

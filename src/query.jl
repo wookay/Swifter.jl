@@ -8,7 +8,7 @@ include("types.jl")
 
 # @query
 macro query(sym::Symbol)
-    query_request(Expr(:quote, sym))
+    query_request(Expr(:block, sym))
 end
 
 macro query(expr::Expr)
@@ -43,11 +43,7 @@ function query_request(expr::Expr)
                 if $rhs_isexpr
                 else
                     (sym,) = rsym
-                    if isa(sym, Symbol)
-                        rvalue = valuate(sym, rvalue)
-                    else
-                        rvalue = sym
-                    end
+                    rvalue = isa(sym, Symbol) ? valuate(sym) : sym
                 end
                 Swifter.env[firstsym] = rvalue
             else
@@ -116,42 +112,41 @@ end
 
 
 
-chains(ex::Union{Symbol,Int,Float64,Bool,AbstractString}) = chains(Expr(:quote, ex))
+chains(ex::Union{Symbol,Int,Float64,Bool,AbstractString}) = chains(Expr(:block, ex))
 chains(expr::Expr) = deserial(chaining(expr, 0, []))
 
 
 
-function valuate(sym::Symbol, default)
+function valuate(sym::Symbol)
     if haskey(Swifter.env, sym)
         Swifter.env[sym]
     elseif isdefined(Main, sym)
         getfield(Main, sym)
     else
-        default
+        sym
     end
 end
 
 
 
-destchains(ex::Union{Symbol,Int,Float64,Bool,AbstractString}) = destchains(Expr(:quote, ex))
+destchains(ex::Union{Symbol,Int,Float64,Bool,AbstractString}) = destchains(Expr(:block, ex))
 
 function destchains(expr::Expr)
     symbols = chains(expr)
     firstsym = first(symbols)
     quote
-        dest = nothing
         sym = $symbols[1]
         try
             sym = $(esc(firstsym))
         end
         if isa(sym, Symbol)
-            $symbols[1] = valuate(sym, sym)
+            $symbols[1] = isa(sym, Symbol) ? valuate(sym) : sym
         end
         if isa(sym, QueryResult)
-            dest = sym.app
-            $symbols[1] = sym
+            (sym.app, vcat(sym, $symbols[2:end]))
+        else
+            (nothing, $symbols)
         end
-        (dest,$symbols)
     end
 end
 

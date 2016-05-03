@@ -41,10 +41,10 @@ outrect = "{{33, 50}, {531, 200}}"
 
 
 
-if VERSION >= v"0.5-" @eval begin
-
-@query intext = text
-@test "Hello world" == @query intext
-@query vc.label.text = intext
-
-end end
+#if VERSION >= v"0.5-" @eval begin
+#
+#@query intext = text
+#@test "Hello world" == @query intext
+#@query vc.label.text = intext
+#
+#end end

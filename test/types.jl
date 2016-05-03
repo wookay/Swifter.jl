@@ -2,7 +2,7 @@ using Swifter
 using Base.Test
 
 import Swifter: Getter, Setter, App, ResultInfo, QueryResult, CallArg
-import Swifter: chains, chaining, deserial, wrap_symbol, destinationof, valuate, destchains
+import Swifter: chains, chaining, deserial, wrap_symbol, destinationof, valuate, destchains, current_app
 
 @test App("") == App("")
 @test Getter([:vc]) == Getter([:vc])
@@ -14,6 +14,7 @@ expr = :(vc.view.backgroundColor = UIColor.greenColor())
 
 param = Dict("lhs"=>Any[(:symbol,:vc),(:symbol,:view)], "type"=>"Getter")
 info = ResultInfo(:symbol, Swifter.RequireToInitial, nothing)
+vc = nothing
 @test QueryResult(info, App(""), "/query", param) == (@query vc.view)
 
 
@@ -41,7 +42,7 @@ expr = parse("vc.tableView.tap(2, row: 1)")
 
 @test App("a") == destinationof(App("a"),nothing)
 
-@test :default == valuate(:vc, :default)
+@test :not_found == valuate(:not_found)
 
-q = destchains(:(vc.view))
-@test isa(q, Expr)
+expr = destchains(:(vc.view))
+@test isa(expr, Expr)
