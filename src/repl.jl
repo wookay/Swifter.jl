@@ -14,7 +14,7 @@ function AddSwifterMode(key, repl)
     mirepl = isdefined(Base.active_repl,:mi) ? Base.active_repl.mi : Base.active_repl
     function linecall(line)
         try
-            Expr(:macrocall, symbol("@query"), parse(line))
+            Expr(:macrocall, Symbol("@query"), parse(line))
         catch e_
         end
     end
