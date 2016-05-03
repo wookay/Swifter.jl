@@ -28,8 +28,7 @@ outrect = "{{33, 50}, {531, 200}}"
 @test "{{33, 50}, {531, 200}}" == Swifter.env[:inrect]
 
 @query rect = CGRectMake(1,2,5,6)
-@test "You need to initial" == Swifter.env[:rect]
-#@test (:call,(:CGRectMake,Any[1,2,5,6])) == Swifter.env[:rect]
+@test (:call,(:CGRectMake,Any[1,2,5,6])) == Swifter.env[:rect]
 
 @query vc.view.subviews[0].backgroundColor = UIColor.redColor()
 
