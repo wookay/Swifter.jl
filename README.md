@@ -1,4 +1,5 @@
-# Swifter.jl
+Swifter.jl
+==========
 
   * iOS REPL with Swifter.jl + [AppConsole](https://github.com/wookay/AppConsole)
 
@@ -7,56 +8,9 @@
   [![Coverage Status](https://coveralls.io/repos/github/wookay/Swifter.jl/badge.svg?branch=master)](https://coveralls.io/github/wookay/Swifter.jl?branch=master)
 
 
+### Jupyter notebooks
 
-# Run server on your iOS app
-```swift
-class ViewController: UIViewController {
-    override func viewDidLoad() {
-        AppConsole(initial: self).run()
-    }
-}
-```
-
-
-# REPL client with Julia
-```julia
-julia> using Swifter
-
-julia> vc = initial("http://localhost:8080")
-Swifter.Memory(Swifter.App("http://localhost:8080"),"0x7f9238f1e4b0")
-
-julia> @query vc.view.backgroundColor = UIColor.greenColor()
-UIDeviceRGBColorSpace 0 1 0 1
-```
-
-
-* Query mode : pressing the `>` key.
-
-```julia
-Swifter> vc.view.frame
-"{{0, 0}, {320, 568}}"
-
-Swifter> vc.label.text = "Hello world"
-"Hello world"
-
-Swifter> vc.label.frame = "{{20, 300}, {500, 200}}"
-"{{20, 300}, {500, 200}}"
-
-Swifter> vc.label.backgroundColor = UIColor.whiteColor()
-UIDeviceWhiteColorSpace 1 1
-
-Swifter> vc.view.subviews[0].backgroundColor = UIColor.yellowColor()
-UIDeviceRGBColorSpace 1 1 0 1
-
-Swifter> vc.label.font = UIFont(name: "Helvetica", size: 50)
-<UICTFont: 0x7f8c687e1cc0> font-family: "Helvetica"; font-weight: normal; font-style: normal; font-size: 50.00pt
-```
-
-
-* Setting the custom key
-```
-julia> ENV["SWIFTER_QUERY_MODE_KEY"] = ">"
-">"
-
-julia> using Swifter
-```
+ - [UIControls.ipynb](https://github.com/wookay/AppConsole/blob/master/notebooks/UIControls.ipynb)
+ - [MultipleDevices.ipynb](https://github.com/wookay/AppConsole/blob/master/notebooks/MultipleDevices.ipynb)
+ - [TableViewController.ipynb](https://github.com/wookay/AppConsole/blob/master/notebooks/TableViewController.ipynb)
+ - [ViewController.ipynb](https://github.com/wookay/AppConsole/blob/master/notebooks/ViewController.ipynb)

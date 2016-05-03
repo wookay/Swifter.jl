@@ -1,8 +1,6 @@
 module Swifter
 
-#FIXME
 __precompile__(true)
-#__precompile__(true)
 
 import Requests: post
 using JSON
