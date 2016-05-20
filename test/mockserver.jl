@@ -12,7 +12,7 @@ function handle(color)
         if ismatch(r"^/initial", req.resource)
             Response("""{"typ": "any", "value": ""}}""")
         elseif ismatch(r"^/query", req.resource)
-            param = JSON.parse(ASCIIString(req.data))
+            param = JSON.parse(utf8(req.data))
             if "Setter" == param["type"]
                 current_color = first(param["rhs"])
             end
