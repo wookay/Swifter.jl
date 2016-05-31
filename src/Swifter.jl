@@ -2,9 +2,7 @@ module Swifter
 
 __precompile__(true)
 
-import Requests: post
-using JSON
-
+import Requests: post, json
 export initial, set_endpoint
 
 include("query.jl")
@@ -22,8 +20,7 @@ function request(app::App, verb::AbstractString, param::Dict)
     if isempty(app.url)
         Dict("typ"=>"symbol", "value"=>RequireToInitial)
     else
-        resp = post("$(app.url)$(verb)"; json = param)
-        JSON.parse(utf8(resp.data))
+        json(post("$(app.url)$(verb)"; json = param))
     end
 end
 

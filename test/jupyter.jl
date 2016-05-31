@@ -7,7 +7,7 @@ import Swifter: path_of_image_from_param, image_scale, save_image_url_to_file
 result = QueryResult(ResultInfo(:view,""),App(""),"/query",Dict("lhs"=>[]))
 @test true == mimewritable(MIME"text/markdown", result)
 buf = IOBuffer()
-writemime(buf, "text/markdown", result)
+show(buf, MIME"text/markdown"(), result)
 @test contains(takebuf_string(buf), "<img src=\"/image")
 
 (path,simple) = path_of_image_from_param(Dict("lhs"=>Any[(:symbol,:vc),(:symbol,:view)]))
