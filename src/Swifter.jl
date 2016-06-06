@@ -26,7 +26,7 @@ end
 
 
 """
-    initial(url) -> QueryResult
+    initial(url)::QueryResult
 
 Create an endpoint by connecting to the AppConsole Server
 """

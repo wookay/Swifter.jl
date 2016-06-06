@@ -1,10 +1,10 @@
 # jupyter.jl
 
-import Base.Markdown: plain, Code, List, tag, htmlesc
 import Base: mimewritable
+import Base.Markdown: plain, Code, List, tag, htmlesc
 import Requests: get
-import JSON: print
 import URIParser: escape
+import JSON: print
 
 Base.mimewritable(::Type{MIME"text/markdown"}, result::QueryResult) = true
 

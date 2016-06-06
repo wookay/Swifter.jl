@@ -8,9 +8,9 @@ include("types.jl")
 
 # @query
 """
-    @query expr -> QueryResult
+    @query(expr)::QueryResult
 
-Query getter, setter expressions
+Execute a query with expression
 """
 macro query(sym::Symbol)
     query_request(Expr(:block, sym))
