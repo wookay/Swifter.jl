@@ -1,10 +1,17 @@
 using Swifter
 using Base.Test
 
+using HttpServer
+
+using Compat
+if VERSION < v"0.5-"
+    const bytes_to_string = Compat.utf8
+else
+    const bytes_to_string = Compat.String
+end
+
 import Swifter: QueryResult, ResultInfo, App
 
-using HttpServer
-using JSON
 
 function handle(color)
     current_color = color
@@ -12,7 +19,7 @@ function handle(color)
         if ismatch(r"^/initial", req.resource)
             Response("""{"typ": "any", "value": ""}}""")
         elseif ismatch(r"^/query", req.resource)
-            param = JSON.parse(ASCIIString(req.data))
+            param = JSON.parse(bytes_to_string(req.data))
             if "Setter" == param["type"]
                 current_color = first(param["rhs"])
             end

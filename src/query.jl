@@ -7,6 +7,11 @@ include("types.jl")
 
 
 # @query
+"""
+    @query(expr)::QueryResult
+
+Execute a query with expression
+"""
 macro query(sym::Symbol)
     query_request(Expr(:block, sym))
 end
@@ -29,7 +34,7 @@ function query_request(expr::Expr)
         quote
             (ldest,lsym) = $lquote
             (rdest,rsym) = $rquote
-            rdestination = destinationof(rdest,ldest)
+            endpoint = endpointof(rdest, ldest)
             rvalue = $lhs_issym ? first(rsym) : rsym
             if $rhs_issym
                 rvalue = valuate(first($rsymbol))
@@ -39,8 +44,8 @@ function query_request(expr::Expr)
                 else
                     param = Dict("type"=>"Getter", "lhs"=>wrap_symbol(rsym))
                     verb = "/query"
-                    dict = request(rdestination, verb, param)
-                    result = QueryResult(dict, rdestination, verb, param)
+                    dict = request(endpoint, verb, param)
+                    result = QueryResult(dict, endpoint, verb, param)
                     rvalue = result.info.value
                 end
             end
@@ -48,11 +53,11 @@ function query_request(expr::Expr)
                 (firstsym,) = $lsymbol
                 Swifter.env[firstsym] = rvalue
             else
-                ldestination = destinationof(ldest,rdest)
+                endpoint = endpointof(ldest, rdest)
                 param = Dict("type"=>"Setter", "lhs"=>wrap_symbol(lsym), "rhs"=>wrap_symbol(rvalue))
                 verb = "/query"
-                dict = request(ldestination, verb, param)
-                QueryResult(dict, ldestination, verb, param)
+                dict = request(endpoint, verb, param)
+                QueryResult(dict, endpoint, verb, param)
             end
         end
     else
@@ -60,11 +65,11 @@ function query_request(expr::Expr)
         (sym,) = expr.args
         quot = quote
             (ldest,lsym) = $lquote
-            ldestination = destinationof(ldest,nothing)
+            endpoint = endpointof(ldest,nothing)
             param = Dict("type"=>"Getter", "lhs"=>wrap_symbol(lsym))
             verb = "/query"
-            dict = request(ldestination, verb, param)
-            QueryResult(dict, ldestination, verb, param)
+            dict = request(endpoint, verb, param)
+            QueryResult(dict, endpoint, verb, param)
         end
         if 1 == length(expr.args) && isa(sym, Symbol)
             quote
@@ -80,36 +85,14 @@ end
 
 
 
-function destinationof(a::Union{Void,App}, b::Union{Void,App})
+function endpointof(a::Union{Void,App}, b::Union{Void,App})
     if isa(a, App)
         return a
     elseif isa(b, App)
         return b
     else
-        return current_app
+        return current_endpoint
     end
-end
-
-
-
-wrap_symbol(ex::Union{QueryResult,Symbol,Int,Float64,Bool,AbstractString}) = wrap_symbol(Any[ex])
-
-function wrap_symbol(lhs::Vector)
-    vals = Any[]
-    for ex in lhs
-        if isa(ex, Symbol)
-            push!(vals, (:symbol, ex))
-        elseif isa(ex, QueryResult)
-            if isa(ex.info.address, Void)
-                push!(vals, ex.info.value)
-            else
-                push!(vals, (:address, string(ex.info.address)))
-            end
-        else
-            push!(vals, ex)
-        end
-    end
-    vals
 end
 
 
@@ -218,11 +201,33 @@ function deserial(symbols::Vector)
             if isempty(sym.args)
                 push!(syms, (:call, sym.name))
             else
-                push!(syms, (:call, (sym.name, sym.args)))
+                push!(syms, (:call, (sym.name, wrap_symbol(sym.args))))
             end
         else
             push!(syms, sym)
         end
     end
     syms
+end
+
+
+
+wrap_symbol(ex::Union{QueryResult,Symbol,Int,Float64,Bool,AbstractString}) = wrap_symbol(Any[ex])
+
+function wrap_symbol(lhs::Vector)
+    vals = Any[]
+    for ex in lhs
+        if isa(ex, Symbol)
+            push!(vals, (:symbol, ex))
+        elseif isa(ex, QueryResult)
+            if isa(ex.info.address, Void)
+                push!(vals, ex.info.value)
+            else
+                push!(vals, (:address, string(ex.info.address)))
+            end
+        else
+            push!(vals, ex)
+        end
+    end
+    vals
 end

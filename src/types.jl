@@ -2,25 +2,25 @@
 
 import Base: ==, show
 
-type App
+immutable App
     url::AbstractString
 end
 
 
 abstract QueryChain
 
-type Setter <: QueryChain
+immutable Setter <: QueryChain
     lhs::Vector
     rhs::Vector
 end
 
 
-type Getter <: QueryChain
+immutable Getter <: QueryChain
     lhs::Vector
 end
 
 
-type ResultInfo
+immutable ResultInfo
     typ::Symbol
     value::Any
     address::Union{Void,AbstractString}
@@ -46,7 +46,8 @@ type ResultInfo
     end
 end
 
-type QueryResult
+
+immutable QueryResult
     info::ResultInfo
     app::App
     verb::AbstractString
@@ -90,7 +91,7 @@ end
 
 
 function Base.show(io::IO, result::QueryResult)
-    print(io, result.info)
+    show(io, result.info)
 end
 
 function Base.show(io::IO, info::ResultInfo)
@@ -101,7 +102,7 @@ function Base.show(io::IO, info::ResultInfo)
             print_with_color(:red, io, info.value)
         end
     elseif :string == info.typ
-        print(io, repr(info.value))
+        print(io, info.value)
     elseif isa(info.value, AbstractArray)
         len = length(info.value)
         for (idx,el) in enumerate(info.value)
@@ -112,6 +113,10 @@ function Base.show(io::IO, info::ResultInfo)
             idx < len && print(io, "\n")
         end
     else
-        print(io, info.value)
+        if VERSION < v"0.5-"
+            write(io, info.value)
+        else
+            show(io, Text(info.value))
+        end
     end
 end

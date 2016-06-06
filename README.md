@@ -8,7 +8,11 @@ Swifter.jl
   [![Coverage Status](https://coveralls.io/repos/github/wookay/Swifter.jl/badge.svg?branch=master)](https://coveralls.io/github/wookay/Swifter.jl?branch=master)
 
 
-### Jupyter notebooks
+### How to use
+ - [HowToUse.ipynb](https://github.com/wookay/AppConsole/blob/master/notebooks/HowToUse.ipynb)
+
+
+### Examples
 
  - [UIControls.ipynb](https://github.com/wookay/AppConsole/blob/master/notebooks/UIControls.ipynb)
  - [MultipleDevices.ipynb](https://github.com/wookay/AppConsole/blob/master/notebooks/MultipleDevices.ipynb)

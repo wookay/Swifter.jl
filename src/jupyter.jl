@@ -1,10 +1,10 @@
 # jupyter.jl
 
+import Base: mimewritable
 import Base.Markdown: plain, Code, List, tag, htmlesc
-import Base: mimewritable, writemime
 import Requests: get
 import URIParser: escape
-import JSON: json
+import JSON: print
 
 Base.mimewritable(::Type{MIME"text/markdown"}, result::QueryResult) = true
 
@@ -13,7 +13,7 @@ function path_of_image_from_param(param::Dict)
     simpler(t::Tuple) = last(t)
     simpler(a::Any) = a
     simple = join(map(simpler, lhs), '.')
-    (escape(json(lhs)), simple)
+    (escape(sprint(print,lhs)), simple)
 end
 
 function image_scale(result::QueryResult)
@@ -45,7 +45,7 @@ function save_image_url_to_file(url::AbstractString, path::AbstractString, r::Ab
     image_path
 end
 
-function Base.writemime(stream::IO, mime::MIME"text/markdown", result::QueryResult; kwargs...)
+function Base.show(stream::IO, mime::MIME"text/markdown", result::QueryResult; kwargs...)
     if isa(result.info.value, AbstractArray)
         plain(stream, List(map(htmlesc, result.info.value)))
     elseif isa(result.info.value, Void)

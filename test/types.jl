@@ -2,7 +2,8 @@ using Swifter
 using Base.Test
 
 import Swifter: Getter, Setter, App, ResultInfo, QueryResult, CallArg
-import Swifter: chains, chaining, deserial, wrap_symbol, destinationof, valuate, destchains, current_app
+import Swifter: chains, chaining, deserial, wrap_symbol, valuate, destchains
+import Swifter: current_endpoint, endpointof
 
 @test App("") == App("")
 @test Getter([:vc]) == Getter([:vc])
@@ -10,7 +11,7 @@ import Swifter: chains, chaining, deserial, wrap_symbol, destinationof, valuate,
 
 expr = :(vc.view.backgroundColor = UIColor.greenColor())
 
-@test App("") == current_app
+@test App("") == current_endpoint
 
 param = Dict("lhs"=>Any[(:symbol,:vc),(:symbol,:view)], "type"=>"Getter")
 info = ResultInfo(:symbol, Swifter.RequireToInitial, nothing)
@@ -40,9 +41,15 @@ expr = parse("vc.tableView.tap(2, row: 1)")
 
 @test Any[(:symbol,:vc)] == wrap_symbol(Any[:vc])
 
-@test App("a") == destinationof(App("a"),nothing)
+@test App("a") == endpointof(App("a"),nothing)
 
 @test :not_found == valuate(:not_found)
 
 expr = destchains(:(vc.view))
 @test isa(expr, Expr)
+
+expr = parse("PHCollectionList.fetchTopLevelUserCollectionsWithOptions(nil)")
+@test Any[(:symbol,:PHCollectionList),(:call,(:fetchTopLevelUserCollectionsWithOptions,Any[(:symbol,:nil)]))] == wrap_symbol(chains(expr))
+
+expr = parse("PHCollectionList.fetchTopLevelUserCollectionsWithOptions(\"nil\")")
+@test Any[(:symbol,:PHCollectionList),(:call,(:fetchTopLevelUserCollectionsWithOptions,Any["nil"]))] == wrap_symbol(chains(expr))
