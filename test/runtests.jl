@@ -1,12 +1,10 @@
-using Swifter
-using Base.Test
-
-if VERSION.minor < 5
-    macro testset(name, block)
-        println(name)
-        eval(block)
-    end
+if VERSION >= v"0.5-"
+    using Base.Test
+else
+    using BaseTestNext
+    const Test = BaseTestNext
 end
+
 
 @testset "types.jl" begin
     include("types.jl")

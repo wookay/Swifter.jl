@@ -102,21 +102,19 @@ function Base.show(io::IO, info::ResultInfo)
             print_with_color(:red, io, info.value)
         end
     elseif :string == info.typ
-        print(io, info.value)
+        show(io, info.value)
     elseif isa(info.value, AbstractArray)
         len = length(info.value)
         for (idx,el) in enumerate(info.value)
             print_with_color(:cyan, io, string(idx-1))
-            print(io, Base.color_normal)
-            print(io, " ")
-            print(io, el)
-            idx < len && print(io, "\n")
+            write(io, Base.color_normal)
+            write(io, " ")
+            write(io, el)
+            idx < len && write(io, "\n")
         end
+    elseif isa(info.value, Dict)
+        show(io, info.value)
     else
-        if VERSION < v"0.5-"
-            write(io, info.value)
-        else
-            show(io, Text(info.value))
-        end
+        write(io, info.value)
     end
 end

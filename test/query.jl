@@ -1,6 +1,11 @@
-using Swifter
-using Base.Test
+if VERSION >= v"0.5-"
+    using Base.Test
+else
+    using BaseTestNext
+    const Test = BaseTestNext
+end
 
+using Swifter
 import Swifter: chains
 
 @query vc.view
@@ -37,7 +42,6 @@ outrect = "{{33, 50}, {531, 200}}"
 @test Any[:view, (:call,:tap)] == chains(:(view.tap()))
 
 @query vc.view.alpha = 0.3
-
 
 
 if VERSION >= v"0.5-" @eval begin

@@ -1,16 +1,22 @@
-using Swifter
-using Base.Test
+if VERSION >= v"0.5-"
+    using Base.Test
+else
+    using BaseTestNext
+    const Test = BaseTestNext
+end
 
 using HttpServer
+using Swifter
+import Swifter: QueryResult, ResultInfo, App
 
+
+# #16107  230e767f6cecbaed426965f8badc5726bb7db72f
 using Compat
-if VERSION < v"0.5-"
+if VERSION < v"0.5-dev+4194"
     const bytes_to_string = Compat.utf8
 else
     const bytes_to_string = Compat.String
 end
-
-import Swifter: QueryResult, ResultInfo, App
 
 
 function handle(color)
