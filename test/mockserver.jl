@@ -17,7 +17,7 @@ function handle(color)
     current_color = color
     HttpHandler() do req::Request, res::Response
         if ismatch(r"^/initial", req.resource)
-            Response("""{"typ": "any", "value": ""}}""")
+            Response("""{"typ": "any", "value": ""}""")
         elseif ismatch(r"^/query", req.resource)
             param = JSON.parse(bytes_to_string(req.data))
             if "Setter" == param["type"]
