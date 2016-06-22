@@ -1,12 +1,6 @@
 # query.jl
 
-export @query
 
-include("types.jl")
-
-
-
-# @query
 """
     @query(expr)::QueryResult
 
@@ -19,7 +13,6 @@ end
 macro query(expr::Expr)
     query_request(expr)
 end
-
 
 
 function query_request(expr::Expr)
@@ -84,7 +77,6 @@ function query_request(expr::Expr)
 end
 
 
-
 function endpointof(a::Union{Void,App}, b::Union{Void,App})
     if isa(a, App)
         return a
@@ -96,10 +88,8 @@ function endpointof(a::Union{Void,App}, b::Union{Void,App})
 end
 
 
-
 chains(ex::Union{Symbol,Int,Float64,Bool,AbstractString}) = chains(Expr(:block, ex))
 chains(expr::Expr) = deserial(chaining(expr, 0, []))
-
 
 
 function valuate(sym::Symbol)
@@ -111,7 +101,6 @@ function valuate(sym::Symbol)
         sym
     end
 end
-
 
 
 destchains(ex::Union{Symbol,Int,Float64,Bool,AbstractString}) = destchains(Expr(:block, ex))
@@ -134,7 +123,6 @@ function destchains(expr::Expr)
         end
     end
 end
-
 
 
 function chaining(expr::Expr, depth::Int, symbols::Vector)
@@ -193,7 +181,6 @@ function chaining(expr::Expr, depth::Int, symbols::Vector)
 end
 
 
-
 function deserial(symbols::Vector)
     syms = Any[]
     for sym in symbols
@@ -209,7 +196,6 @@ function deserial(symbols::Vector)
     end
     syms
 end
-
 
 
 wrap_symbol(ex::Union{QueryResult,Symbol,Int,Float64,Bool,AbstractString}) = wrap_symbol(Any[ex])

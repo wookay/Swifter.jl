@@ -1,6 +1,11 @@
-using Swifter
-using Base.Test
+if VERSION >= v"0.5-"
+    using Base.Test
+else
+    using BaseTestNext
+    const Test = BaseTestNext
+end
 
+using Swifter
 import Swifter: Getter, Setter, App, ResultInfo, QueryResult, CallArg
 import Swifter: chains, chaining, deserial, wrap_symbol, valuate, destchains
 import Swifter: current_endpoint, endpointof
@@ -15,8 +20,9 @@ expr = :(vc.view.backgroundColor = UIColor.greenColor())
 
 param = Dict("lhs"=>Any[(:symbol,:vc),(:symbol,:view)], "type"=>"Getter")
 info = ResultInfo(:symbol, Swifter.RequireToInitial, nothing)
+result = QueryResult(info, App(""), "/query", param)
 vc = nothing
-@test QueryResult(info, App(""), "/query", param) == (@query vc.view)
+@test result == (@query vc.view)
 
 
 @test Any[:sym] == chains(:sym)
@@ -53,3 +59,12 @@ expr = parse("PHCollectionList.fetchTopLevelUserCollectionsWithOptions(nil)")
 
 expr = parse("PHCollectionList.fetchTopLevelUserCollectionsWithOptions(\"nil\")")
 @test Any[(:symbol,:PHCollectionList),(:call,(:fetchTopLevelUserCollectionsWithOptions,Any["nil"]))] == wrap_symbol(chains(expr))
+
+
+another_info = ResultInfo(:string, "hello", nothing)
+another_result = QueryResult(another_info, App("another"), "/query", param)
+set_endpoint(another_result)
+@test App("another") == current_endpoint
+set_endpoint(result)
+
+@test "hello" == valueof(another_result)

@@ -68,3 +68,11 @@ function Base.show(stream::IO, mime::MIME"text/markdown", result::QueryResult; k
         tag(stream, :img, :src=>url, :alt=>simple, :style=>image_scale(result))
     end
 end
+
+
+# #14052  ae62bf0b813afbf32402874451e55d16de909bd4
+if VERSION < v"0.5-dev+4341"
+    function Base.writemime(stream::IO, mime::MIME"text/markdown", result::QueryResult; kwargs...)
+        Base.show(stream, mime, result)
+    end
+end

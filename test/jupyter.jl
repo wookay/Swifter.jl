@@ -1,5 +1,9 @@
-using Swifter
-using Base.Test
+if VERSION >= v"0.5-"
+    using Base.Test
+else
+    using BaseTestNext
+    const Test = BaseTestNext
+end
 
 import Swifter: QueryResult, ResultInfo, App
 import Swifter: path_of_image_from_param, image_scale, save_image_url_to_file

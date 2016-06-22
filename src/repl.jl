@@ -1,6 +1,5 @@
 import Base: LineEdit, REPL
 
-export RunSwifterREPL
 
 # original code from
 # https://github.com/Keno/Cxx.jl/blob/master/src/CxxREPL/replpane.jl
