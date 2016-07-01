@@ -1,10 +1,11 @@
 # jupyter.jl
 
-import Base: mimewritable
+import Base: show, mimewritable
 import Base.Markdown: plain, Code, List, tag, htmlesc
 import Requests: get
 import URIParser: escape
 import JSON: print
+using Compat
 
 
 Base.mimewritable(::Type{MIME"text/markdown"}, result::QueryResult) = true
@@ -99,12 +100,12 @@ function show_view_vector(stream::IO, mime::MIME"text/markdown", appvec::Vector{
 end
 
 
-function Base.show(stream::IO, mime::MIME"text/markdown", vec::AbstractArray{QueryResult,1})
+@compat function Base.show(stream::IO, mime::MIME"text/markdown", vec::Vector{QueryResult})
     show_view_vector(stream, mime, map(v->v.app, vec), map(v->v.info.value, vec))
 end
 
 
-function Base.show(stream::IO, mime::MIME"text/markdown", result::QueryResult; kwargs...)
+@compat function Base.show(stream::IO, mime::MIME"text/markdown", result::QueryResult)
     if isa(result.info.value, AbstractArray)
         show_view_vector(stream, mime, [result.app for x in 1:length(result.info.value)], result.info.value)
     elseif isa(result.info.value, Void)
@@ -117,17 +118,5 @@ function Base.show(stream::IO, mime::MIME"text/markdown", result::QueryResult; k
         app = result.app
         url = "$(app.url)/image?path=$path"
         tag(stream, :img, :src=>save_image(url, simple), :alt=>simple, :style=>image_scale(result.info.value))
-    end
-end
-
-
-# #14052  ae62bf0b813afbf32402874451e55d16de909bd4
-if VERSION < v"0.5-dev+4341"
-    function Base.writemime(stream::IO, mime::MIME"text/markdown", vec::AbstractArray{QueryResult,1}; kwargs...)
-        Base.show(stream, mime, vec)
-    end
-
-    function Base.writemime(stream::IO, mime::MIME"text/markdown", result::QueryResult; kwargs...)
-        Base.show(stream, mime, result)
     end
 end
